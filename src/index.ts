@@ -1,21 +1,34 @@
 import 'dotenv/config';
 import express from 'express';
-import http from 'http';
+import {createServer} from 'node:http';
 import { Server } from 'socket.io';
-import cors from 'cors';
 import colors from 'colors';
 import morgan from 'morgan';
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+import cors from 'cors';
 
 const PORT = process.env.PORT || 3004;
-const whiteList = process.env.WHITE_LIST
+const whiteList = process.env.WHITE_LIST ? process.env.WHITE_LIST.split(',') : '';
 
-app.use(cors({origin: whiteList}));
+const app = express();
+const server = createServer(app);
 
-// Middlewares
+const io = new Server(server, {
+ cors: {
+      origin: whiteList, 
+      methods: ['GET', 'POST'],
+      credentials: true 
+    }
+});
+
+
+
+io.on('connection', (socket) => {
+  console.log();
+  socket.on('chat', (data) => {
+    console.log(colors.bgMagenta.black(`--->>> Client connected --- ${JSON.stringify(data)}   `))
+    socket.broadcast.emit('chat', data={...data, from: socket.id});
+  })
+})
 
 
 
